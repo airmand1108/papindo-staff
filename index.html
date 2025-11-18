@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Papindo Staff - Add Points</title>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <style>
+    body { font-family: Arial; background: #f0f2f5; padding: 20px; text-align: center; }
+    .container { max-width: 400px; margin: 40px auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    h1 { color: #1a237e; }
+    input, button { width: 100%; padding: 15px; margin: 10px 0; font-size: 18px; border-radius: 12px; border: 1px solid #ccc; }
+    button { background: #1a237e; color: white; font-weight: bold; cursor: pointer; }
+    button:disabled { background: #666; }
+    .success { color: green; font-size: 20px; margin-top: 20px; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Papindo Staff</h1>
+  <h2>Add Points</h2>
+
+  <input type="text" id="phone" placeholder="Phone (75123456)" maxlength="8">
+  <input type="number" id="amount" placeholder="Amount Spent (K)" step="0.01">
+
+  <button id="addBtn">ADD POINTS</button>
+
+  <div id="message"></div>
+</div>
+
+<script>
+// YOUR FIREBASE CONFIG — REPLACE WITH YOUR PROJECT
+const firebaseConfig = {
+  apiKey: "AIzaSyBvPAyWxpBXOlnfcE8br6pnbuPlkIgQD1g",
+  authDomain: "papindo-membership.firebaseapp.com",
+  projectId: "papindo-membership",
+  storageBucket: "papindo-membership.firebasestorage.app",
+  messagingSenderId: "375380907483",
+  appId: "1:375380907483:web:f5bd1b2687182ab6a183fe"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+document.getElementById('addBtn').addEventListener('click', async () => {
+  const phoneInput = document.getElementById('phone').value.trim();
+  const amount = parseFloat(document.getElementById('amount').value);
+  const msg = document.getElementById('message');
+
+  if (!phoneInput || phoneInput.length !== 8 || !amount || amount < 10) {
+    msg.innerHTML = '<span class="error">Enter valid 8-digit phone & minimum K10</span>';
+    return;
+  }
+
+  const phone = '+675' + phoneInput;
+  const points = Math.floor(amount * 10); // K1 = 10 points
+
+  try {
+    const snap = await db.collection('users')
+      .where('phone', '==', phone)
+      .limit(1)
+      .get();
+
+    if (snap.empty) {
+      msg.innerHTML = '<span class="error">Member not found</span>';
+      return;
+    }
+
+    await snap.docs[0].ref.update({
+      points: firebase.firestore.FieldValue.increment(points, 'increment')
+    });
+
+    msg.innerHTML = `<span class="success">SUCCESS!<br>Added ${points} points<br>Total now updated</span>`;
+    document.getElementById('phone').value = '';
+    document.getElementById('amount').value = '';
+  } catch (e) {
+    msg.innerHTML = '<span class="error">Error. Try again.</span>';
+  }
+});
+</script>
+
+</body>
+</html>
